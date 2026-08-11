@@ -1,46 +1,31 @@
-// Utility function to debounce function calls
-export function debounce(fn: Function, delay: number) {
-    let timeoutId: NodeJS.Timeout;
-    return function (...args: any[]) {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-        timeoutId = setTimeout(() => {
-            fn(...args);
-        }, delay);
-    };
+// Utility functions for gaming operations
+
+// Check if a number is within a given range
+export function isInRange(value: number, min: number, max: number): boolean {
+    return value >= min && value <= max;
 }
 
-// Utility function to throttle function calls
-export function throttle(fn: Function, limit: number) {
-    let lastFunc: NodeJS.Timeout;
-    let lastRan: number;
-    return function (...args: any[]) {
-        const context = this;
-        if (!lastRan) {
-            fn.apply(context, args);
-            lastRan = Date.now();
-        }
-        clearTimeout(lastFunc);
-        lastFunc = setTimeout(() => {
-            if ((Date.now() - lastRan) >= limit) {
-                fn.apply(context, args);
-                lastRan = Date.now();
-            }
-        }, limit - (Date.now() - lastRan));
-    };
+// Randomly shuffle an array
+export function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // swap
+    }
+    return shuffled;
 }
 
-// A function to memoize results of expensive computations
-export function memoize(fn: Function) {
-    const cache: Record<string, any> = {};
-    return function (...args: any[]) {
-        const key = JSON.stringify(args);
-        if (cache[key]) {
-            return cache[key];
-        }
-        const result = fn(...args);
-        cache[key] = result;
-        return result;
-    };
+// Clamp a number between a minimum and maximum value
+export function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
+
+// Calculate the distance between two points
+export function calculateDistance(x1: number, y1: number, x2: number, y2: number): number {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+// Generate a random integer within a range
+export function getRandomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
