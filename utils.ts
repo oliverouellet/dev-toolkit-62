@@ -1,16 +1,5 @@
-export async function retry<T>(fn: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-        try {
-            return await fn();
-        } catch (error) {
-            if (i === retries - 1) throw error; // re-throw the last error
-            await new Promise(res => setTimeout(res, delay)); // wait before next retry
-        }
-    }
-    throw new Error('Max retries reached'); // this should never be reached
-}
+export function debounce(func: Function, delay: number) {  let timeoutId: NodeJS.Timeout;  return function(...args: any[]) {    const context = this;    clearTimeout(timeoutId);    timeoutId = setTimeout(() => {      func.apply(context, args);    }, delay);  };}
 
-// Example of using retry for a network operation:
-export async function fetchWithRetry(url: string, options?: RequestInit): Promise<Response> {
-    return retry(() => fetch(url, options), 3, 1000);
-}
+export function throttle(func: Function, limit: number) {  let lastFunc: NodeJS.Timeout;  let lastRan: number;  return function(...args: any[]) {    const context = this;    if (!lastRan) {      func.apply(context, args);      lastRan = Date.now();    }    clearTimeout(lastFunc);    lastFunc = setTimeout(() => {      if (Date.now() - lastRan >= limit) {        func.apply(context, args);        lastRan = Date.now();      }    }, limit - (Date.now() - lastRan));  };}
+
+export function memoize(func: (...args: any[]) => any) {  const cache: { [key: string]: any } = {};  return function(...args: any[]) {    const key = JSON.stringify(args);    if (key in cache) {      return cache[key];    }    const result = func(...args);    cache[key] = result;    return result;  };}
