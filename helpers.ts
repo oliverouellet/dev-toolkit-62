@@ -1,29 +1,32 @@
-type MyError = { code: number; message: string; };
+import fs from 'fs';
+import path from 'path';
 
-function handleError(err: unknown): MyError {
-    // Check if the error is an instance of Error
-    if (err instanceof Error) {
-        return { code: 500, message: err.message };
-    }
-    // If it's a known error type, handle accordingly
-    if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
-        return { code: (err as { code: number }).code || 500, message: (err as { message: string }).message || 'Unknown error occurred' };
-    }
-    // For any other unknown type
-    return { code: 500, message: 'An unknown error occurred' };
+interface Config {
+    port: number;
+    dbUrl: string;
+    logLevel: string;
 }
 
-function processData(data: any): string {
+const defaultConfig: Config = {
+    port: 3000,
+    dbUrl: 'mongodb://localhost:27017/myapp',
+    logLevel: 'info',
+};
+
+function loadConfig(filePath: string): Config {
+    const fullPath = path.resolve(filePath);
+    if (!fs.existsSync(fullPath)) {
+        console.warn(`Config file not found. Using default config.`);
+        return defaultConfig;
+    }
+    const fileContent = fs.readFileSync(fullPath, 'utf8');
     try {
-        if (!data || typeof data !== 'object') {
-            throw new Error('Invalid data');
-        }
-        // Process your data here
-        return `Processed: ${JSON.stringify(data)}`;
-    } catch (err) {
-        const errorResponse = handleError(err);
-        return `Error (${errorResponse.code}): ${errorResponse.message}`;
+        const userConfig: Partial<Config> = JSON.parse(fileContent);
+        return { ...defaultConfig, ...userConfig }; // Merge with defaults
+    } catch (error) {
+        console.error('Error parsing config file:', error);
+        return defaultConfig;
     }
 }
 
-export { handleError, processData };
+export { loadConfig };
