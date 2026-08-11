@@ -1,25 +1,31 @@
-import fs from 'fs';
-import path from 'path';
+import { createLogger, format, transports } from 'winston';
+import { rotateFile } from 'winston-daily-rotate-file';
 
-interface Config {
-    host: string;
-    port: number;
-    useSSL: boolean;
-}
+const logger = createLogger({
+    level: 'info',
+    format: format.combine(
+        format.timestamp(),
+        format.printf(({ timestamp, level, message }) => {
+            return `${timestamp} ${level}: ${message}`;
+        })
+    ),
+    transports: [
+        new rotateFile({
+            filename: 'logs/application-%DATE%.log',
+            datePattern: 'YYYY-MM-DD',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '14d',
+            level: 'info',
+        }),
+        new transports.Console({
+            format: format.combine(
+                format.colorize(),
+                format.simple()
+            ),
+            level: 'debug',
+        }),
+    ],
+});
 
-const defaultConfig: Config = {
-    host: 'localhost',
-    port: 3000,
-    useSSL: false,
-};
-
-function loadConfig(filePath: string): Config {
-    const configPath = path.resolve(filePath);
-    if (fs.existsSync(configPath)) {
-        const userConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        return { ...defaultConfig, ...userConfig };
-    }
-    return defaultConfig;
-}
-
-export { loadConfig, Config };
+export default logger;
