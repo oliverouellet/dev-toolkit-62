@@ -1,23 +1,16 @@
-function validateInput(input: any): boolean {
-    if (typeof input !== 'string') {
-        console.error('Invalid input: must be a string.');
-        return false;
+export async function retry<T>(fn: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (i === retries - 1) throw error; // re-throw the last error
+            await new Promise(res => setTimeout(res, delay)); // wait before next retry
+        }
     }
-    if (input.trim().length === 0) {
-        console.error('Invalid input: cannot be empty.');
-        return false;
-    }
-    return true;
+    throw new Error('Max retries reached'); // this should never be reached
 }
 
-function processInput(input: any): void {
-    if (!validateInput(input)) {
-        return;
-    }
-    // Main processing logic goes here
-    console.log('Processing input:', input);
+// Example of using retry for a network operation:
+export async function fetchWithRetry(url: string, options?: RequestInit): Promise<Response> {
+    return retry(() => fetch(url, options), 3, 1000);
 }
-
-// Example usage
-const inputs = ["valid input", 42, "   ", null];
-inputs.forEach(input => processInput(input));
