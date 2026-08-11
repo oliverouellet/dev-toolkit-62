@@ -1,31 +1,23 @@
-type User = {  id: number;  name: string;  email: string;};
-
-/**
- * Filters users based on a provided email domain.
- * @param users - An array of User objects to be filtered.
- * @param domain - The email domain to filter the users by.
- * @returns An array of User objects with the specified email domain.
- */
-function filterUsersByDomain(users: User[], domain: string): User[] {
-    return users.filter(user => user.email.endsWith(domain));
+function validateInput(input: any): boolean {
+    if (typeof input !== 'string') {
+        console.error('Invalid input: must be a string.');
+        return false;
+    }
+    if (input.trim().length === 0) {
+        console.error('Invalid input: cannot be empty.');
+        return false;
+    }
+    return true;
 }
 
-/**
- * Sorts an array of users by their names.
- * @param users - An array of User objects to be sorted.
- * @returns A new array of User objects sorted by name.
- */
-function sortUsersByName(users: User[]): User[] {
-    return [...users].sort((a, b) => a.name.localeCompare(b.name));
+function processInput(input: any): void {
+    if (!validateInput(input)) {
+        return;
+    }
+    // Main processing logic goes here
+    console.log('Processing input:', input);
 }
 
-/**
- * Displays user information in a formatted string.
- * @param user - A User object to be displayed.
- * @returns A formatted string with user details.
- */
-function displayUserInfo(user: User): string {
-    return `ID: ${user.id}, Name: ${user.name}, Email: ${user.email}`;
-}
-
-export { User, filterUsersByDomain, sortUsersByName, displayUserInfo };
+// Example usage
+const inputs = ["valid input", 42, "   ", null];
+inputs.forEach(input => processInput(input));
