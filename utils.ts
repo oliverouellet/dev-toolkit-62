@@ -1,23 +1,33 @@
-export function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
+import fs from 'fs';
+import path from 'path';
+import { format } from 'date-fns';
+
+const logDirectory = path.join(__dirname, 'logs');
+
+// Ensure the log directory exists
+if (!fs.existsSync(logDirectory)) {
+    fs.mkdirSync(logDirectory);
 }
 
-export function lerp(start: number, end: number, fraction: number): number {
-    return start + (end - start) * fraction;
-}
+const getLogFileName = () => {
+    const date = format(new Date(), 'yyyy-MM-dd');
+    return path.join(logDirectory, `log-${date}.txt`);
+};
 
-export function randomRange(min: number, max: number): number {
-    return Math.random() * (max - min) + min;
-}
+const rotateLogs = () => {
+    const oldFilePath = getLogFileName();
+    const backupFilePath = path.join(logDirectory, `log-${format(new Date(), 'yyyy-MM-dd-HH-mm-ss')}.txt`);
 
-export function isPointInRect(point: { x: number; y: number }, rect: { x: number; y: number; width: number; height: number }): boolean {
-    return point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
-}
-
-export function shuffleArray<T>(array: T[]): T[] {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+    if (fs.existsSync(oldFilePath)) {
+        fs.renameSync(oldFilePath, backupFilePath);
     }
-    return array;
-}
+};
+
+const logMessage = (message: string) => {
+    rotateLogs();
+    const logFilePath = getLogFileName();
+    const logEntry = `${new Date().toISOString()} - ${message}\n`;
+    fs.appendFileSync(logFilePath, logEntry);
+};
+
+export { logMessage };
