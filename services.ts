@@ -1,36 +1,56 @@
-// Importing necessary types
-import { User, UserResponse } from './types';
+type Game = { id: string; title: string; genre: string; releaseDate: Date; };
+
+type Player = { username: string; score: number; level: number; };
+
+const games: Game[] = [];
+const players: Player[] = [];
 
 /**
- * Fetches user data from the server.
- * @param userId - The ID of the user to fetch.
- * @returns A promise that resolves to a UserResponse object.
+ * Adds a new game to the list
+ * @param game - The game to add
  */
-export async function fetchUserData(userId: string): Promise<UserResponse> {
-    const response = await fetch(`https://api.example.com/users/${userId}`);
-    if (!response.ok) {
-        throw new Error('Network response was not ok');
-    }
-    const data: User = await response.json();
-    return data;
+function addGame(game: Game): void {
+    games.push(game);
 }
 
 /**
- * Creates a new user.
- * @param user - The user data to create.
- * @returns A promise that resolves to the created UserResponse object.
+ * Retrieves a game by its ID
+ * @param id - The ID of the game to retrieve
+ * @returns The game object or undefined if not found
  */
-export async function createUser(user: User): Promise<UserResponse> {
-    const response = await fetch('https://api.example.com/users', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
-    });
-    if (!response.ok) {
-        throw new Error('Failed to create user');
-    }
-    const data: User = await response.json();
-    return data;
+function getGameById(id: string): Game | undefined {
+    return games.find(game => game.id === id);
+}
+
+/**
+ * Adds a new player to the list
+ * @param player - The player to add
+ */
+function addPlayer(player: Player): void {
+    players.push(player);
+}
+
+/**
+ * Retrieves a player by their username
+ * @param username - The username of the player to retrieve
+ * @returns The player object or undefined if not found
+ */
+function getPlayerByUsername(username: string): Player | undefined {
+    return players.find(player => player.username === username);
+}
+
+/**
+ * Gets all games
+ * @returns An array of all games
+ */
+function getAllGames(): Game[] {
+    return games;
+}
+
+/**
+ * Gets all players
+ * @returns An array of all players
+ */
+function getAllPlayers(): Player[] {
+    return players;
 }
