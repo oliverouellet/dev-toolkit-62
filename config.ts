@@ -1,31 +1,20 @@
-import { createLogger, format, transports } from 'winston';
-import { rotateFile } from 'winston-daily-rotate-file';
+const CONFIG = {
+    BASE_API_URL: 'https://api.gamingexample.com',
+    TIMEOUT: 5000,
+    MAX_RETRIES: 3,
+    LOG_LEVEL: 'info',
+    featureFlags: {
+        ENABLE_NEW_FEATURE: true,
+        ENABLE_BETA_ACCESS: false,
+    },
+};
 
-const logger = createLogger({
-    level: 'info',
-    format: format.combine(
-        format.timestamp(),
-        format.printf(({ timestamp, level, message }) => {
-            return `${timestamp} ${level}: ${message}`;
-        })
-    ),
-    transports: [
-        new rotateFile({
-            filename: 'logs/application-%DATE%.log',
-            datePattern: 'YYYY-MM-DD',
-            zippedArchive: true,
-            maxSize: '20m',
-            maxFiles: '14d',
-            level: 'info',
-        }),
-        new transports.Console({
-            format: format.combine(
-                format.colorize(),
-                format.simple()
-            ),
-            level: 'debug',
-        }),
-    ],
-});
+export const getConfig = (key: string): string | undefined => {
+    return CONFIG[key];
+};
 
-export default logger;
+export const isFeatureEnabled = (feature: string): boolean => {
+    return CONFIG.featureFlags[feature] !== undefined ? CONFIG.featureFlags[feature] : false;
+};
+
+export default CONFIG;
