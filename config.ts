@@ -1,20 +1,30 @@
-const CONFIG = {
-    BASE_API_URL: 'https://api.gamingexample.com',
-    TIMEOUT: 5000,
-    MAX_RETRIES: 3,
-    LOG_LEVEL: 'info',
-    featureFlags: {
-        ENABLE_NEW_FEATURE: true,
-        ENABLE_BETA_ACCESS: false,
-    },
+// Default configuration values
+const defaultConfig = {
+    resolution: '1920x1080',
+    volume: 70,
+    controls: {
+        jump: 'space',
+        shoot: 'ctrl',
+        moveLeft: 'a',
+        moveRight: 'd'
+    }
 };
 
-export const getConfig = (key: string): string | undefined => {
-    return CONFIG[key];
+// Configuration loader
+export function loadConfig(customConfig = {}): any {
+    return {
+        ...defaultConfig,
+        ...customConfig
+    };
+}
+
+// Example usage
+const userConfig = {
+    volume: 80,
+    controls: {
+        jump: 'w'
+    }
 };
 
-export const isFeatureEnabled = (feature: string): boolean => {
-    return CONFIG.featureFlags[feature] !== undefined ? CONFIG.featureFlags[feature] : false;
-};
-
-export default CONFIG;
+const finalConfig = loadConfig(userConfig);
+console.log(finalConfig); // Merges defaults with user input
