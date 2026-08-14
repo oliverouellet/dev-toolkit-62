@@ -1,1 +1,36 @@
-interface GameData {  id: number;  title: string;  genre: string;  releaseDate: string;  rating: number;  platform: string;}  const games: GameData[] = [];  /**  * Adds a new game to the collection.  * @param game - The game data to add.  */  export function addGame(game: GameData): void {    games.push(game);  }  /**  * Retrieves a game by its ID.  * @param id - The ID of the game to retrieve.  * @returns The game data if found, otherwise undefined.  */  export function getGameById(id: number): GameData | undefined {    return games.find(game => game.id === id);  }  /**  * Retrieves all games in the collection.  * @returns An array of all game data.  */  export function getAllGames(): GameData[] {    return [...games];  }  /**  * Deletes a game from the collection by its ID.  * @param id - The ID of the game to delete.  * @returns True if the game was deleted, otherwise false.  */  export function deleteGame(id: number): boolean {    const index = games.findIndex(game => game.id === id);    if (index === -1) return false;    games.splice(index, 1);    return true;  }
+// Import required modules
+import fs from 'fs';
+import path from 'path';
+import winston from 'winston';
+import 'winston-daily-rotate-file';
+
+// Define log directory
+const logDir = path.join(__dirname, 'logs');
+// Ensure log directory exists
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
+
+// Create a rotating file logger
+const transport = new winston.transports.DailyRotateFile({
+    filename: path.join(logDir, '%DATE%-results.log'),
+    datePattern: 'YYYY-MM-DD',
+    dateFormat: 'YYYY-MM-DD HH:mm:ss',
+    prepend: true,
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d',
+});
+
+// Configure the logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [transport],
+});
+
+// Export the logger for use in the application
+export default logger;
