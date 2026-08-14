@@ -1,40 +1,32 @@
-/**
- * Represents a player in the game.
- * @interface Player
- */
-interface Player {
-    /** The unique identifier for the player */
-    id: string;
-    /** The name of the player */
+type GameCharacter = {
+    id: number;
     name: string;
-    /** The current score of the player */
-    score: number;
-}
-
-/**
- * Represents a game state.
- * @interface GameState
- */
-interface GameState {
-    /** The current level of the game */
+    health: number;
+    experience: number;
     level: number;
-    /** The list of players in the game */
-    players: Player[];
-    /** Indicates if the game is currently active */
-    isActive: boolean;
+    inventory: Item[];
+};
+
+interface Item {
+    itemId: number;
+    itemName: string;
+    description?: string;
+    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 }
 
-/**
- * Represents the settings for the game.
- * @interface GameSettings
- */
-interface GameSettings {
-    /** The maximum number of players allowed in the game */
-    maxPlayers: number;
-    /** The duration of the game in minutes */
-    duration: number;
-    /** The difficulty level of the game */
-    difficulty: 'easy' | 'medium' | 'hard';
-}
+type GameState = {
+    characters: GameCharacter[];
+    currentLevel: number;
+    score: number;
+    isGameOver: boolean;
+};
 
-export { Player, GameState, GameSettings };
+type PlayerAction = 'MOVE' | 'ATTACK' | 'DEFEND' | 'USE_ITEM';
+
+interface ActionResult {
+    success: boolean;
+    message: string;
+    newState?: GameState;
+};
+
+export { GameCharacter, Item, GameState, PlayerAction, ActionResult };
