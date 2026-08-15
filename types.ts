@@ -1,32 +1,27 @@
-type GameCharacter = {
-    id: number;
-    name: string;
-    health: number;
-    experience: number;
-    level: number;
-    inventory: Item[];
-};
-
-interface Item {
-    itemId: number;
-    itemName: string;
-    description?: string;
-    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export interface GameError {
+    code: string;
+    message: string;
+    timestamp: Date;
 }
 
-type GameState = {
-    characters: GameCharacter[];
-    currentLevel: number;
-    score: number;
-    isGameOver: boolean;
-};
+export enum ErrorCodes {
+    NETWORK_ERROR = 'NETWORK_ERROR',
+    INVALID_INPUT = 'INVALID_INPUT',
+    TIMEOUT = 'TIMEOUT',
+    UNAUTHORIZED = 'UNAUTHORIZED',
+}
 
-type PlayerAction = 'MOVE' | 'ATTACK' | 'DEFEND' | 'USE_ITEM';
+export function handleError(error: GameError): void {
+    console.error(`Error Code: ${error.code}`);
+    console.error(`Error Message: ${error.message}`);
+    console.error(`Timestamp: ${error.timestamp.toISOString()}`);
+    // Additional error handling logic could be added here
+}
 
-interface ActionResult {
-    success: boolean;
-    message: string;
-    newState?: GameState;
-};
-
-export { GameCharacter, Item, GameState, PlayerAction, ActionResult };
+export function logError(code: ErrorCodes, message: string): GameError {
+    return {
+        code,
+        message,
+        timestamp: new Date(),
+    };
+}
