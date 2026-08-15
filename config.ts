@@ -1,30 +1,39 @@
-// Default configuration values
-const defaultConfig = {
-    resolution: '1920x1080',
-    volume: 70,
-    controls: {
-        jump: 'space',
-        shoot: 'ctrl',
-        moveLeft: 'a',
-        moveRight: 'd'
-    }
-};
+import { createLogger, format, transports } from 'winston';
+import { join } from 'path';
 
-// Configuration loader
-export function loadConfig(customConfig = {}): any {
-    return {
-        ...defaultConfig,
-        ...customConfig
-    };
+const logDirectory = join(__dirname, 'logs');
+
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.printf(({ timestamp, level, message }) => {
+      return `${timestamp} [${level}]: ${message}`;
+    })
+  ),
+  transports: [
+    new transports.File({
+      filename: join(logDirectory, 'error.log'),
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: '14d',
+      tailable: true,
+    }),
+    new transports.File({
+      filename: join(logDirectory, 'combined.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: '14d',
+      tailable: true,
+    }),
+  ],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new transports.Console({
+      format: format.simple(),
+    })
+  );
 }
 
-// Example usage
-const userConfig = {
-    volume: 80,
-    controls: {
-        jump: 'w'
-    }
-};
-
-const finalConfig = loadConfig(userConfig);
-console.log(finalConfig); // Merges defaults with user input
+export default logger;
