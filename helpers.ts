@@ -1,40 +1,39 @@
-// Helper functions for common operations in gaming
-
-/**
- * Generates a random integer between min and max (inclusive).
- * @param min - Minimum value.
- * @param max - Maximum value.
- * @returns A random integer between min and max.
- */
-function getRandomInt(min: number, max: number): number {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+interface Coordinate {
+    x: number;
+    y: number;
 }
 
 /**
- * Clamps a number between a minimum and maximum value.
- * @param value - The number to clamp.
- * @param min - Minimum allowed value.
- * @param max - Maximum allowed value.
+ * Computes the distance between two coordinates.
+ * @param pointA - The first coordinate.
+ * @param pointB - The second coordinate.
+ * @returns The distance between pointA and pointB.
+ */
+function calculateDistance(pointA: Coordinate, pointB: Coordinate): number {
+    const dx = pointB.x - pointA.x;
+    const dy = pointB.y - pointA.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Clamps a value between a minimum and maximum.
+ * @param value - The value to clamp.
+ * @param min - The minimum limit.
+ * @param max - The maximum limit.
  * @returns The clamped value.
  */
 function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(value, max));
+    return Math.max(min, Math.min(max, value));
 }
 
 /**
- * Shuffles an array using the Fisher-Yates algorithm.
- * @param array - The array to shuffle.
- * @returns A new array with shuffled elements.
+ * Generates a random integer within a range.
+ * @param min - The minimum integer (inclusive).
+ * @param max - The maximum integer (exclusive).
+ * @returns A random integer between min and max.
  */
-function shuffleArray<T>(array: T[]): T[] {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+function randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min)) + min;
 }
 
-export { getRandomInt, clamp, shuffleArray };
+export { calculateDistance, clamp, randomInt };
