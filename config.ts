@@ -1,39 +1,30 @@
-import { createLogger, format, transports } from 'winston';
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
 
-const logDirectory = join(__dirname, 'logs');
+type Config = {  
+    port: number;  
+    dbUrl: string;  
+    logLevel: 'debug' | 'info' | 'warn' | 'error';  
+};
 
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level}]: ${message}`;
-    })
-  ),
-  transports: [
-    new transports.File({
-      filename: join(logDirectory, 'error.log'),
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: '14d',
-      tailable: true,
-    }),
-    new transports.File({
-      filename: join(logDirectory, 'combined.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: '14d',
-      tailable: true,
-    }),
-  ],
-});
+const defaultConfig: Config = {  
+    port: 3000,  
+    dbUrl: 'mongodb://localhost:27017/myapp',  
+    logLevel: 'info'  
+};
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new transports.Console({
-      format: format.simple(),
-    })
-  );
+export function loadConfig(configPath: string): Config {  
+    try {  
+        const fullPath = path.resolve(process.cwd(), configPath);  
+        const fileData = fs.readFileSync(fullPath, 'utf-8');  
+        const userConfig = JSON.parse(fileData);  
+
+        return {  
+            ...defaultConfig,  
+            ...userConfig,  
+        };  
+    } catch (error) {  
+        console.warn('Could not load config, using defaults:', error);
+        return defaultConfig;  
+    }  
 }
-
-export default logger;
