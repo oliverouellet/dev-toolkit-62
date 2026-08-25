@@ -1,34 +1,58 @@
-import axios from 'axios';
-import { GameData, GameError } from './types';
+interface GameInput {
+  playerId: string;
+  action: string;
+  value?: number;
+  timestamp?: number;
+}
 
-const API_URL = 'https://api.gaming.com/games';
+export class GameService {
+  private validActions: string[] = ['move', 'jump', 'attack', 'collect'];
 
-export const fetchGameData = async (gameId: string): Promise<GameData | GameError> => {
-    try {
-        const response = await axios.get(`${API_URL}/${gameId}`);
-        if (response.status !== 200) {
-            return { error: 'Failed to fetch game data', code: response.status };
-        }
-        return response.data;
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            return { error: error.message, code: error.response?.status || 500 };
-        }
-        return { error: 'An unexpected error occurred', code: 500 };
+  /**
+   * Processes inputs in main loop after validation.
+   */
+  processInputs(inputs: unknown[]): void {
+    for (let i = 0; i < inputs.length; i++) {
+      const currentInput = inputs[i];
+      if (!this.isValidGameInput(currentInput)) {
+        console.error(`Invalid input detected at index ${i}`);
+        continue;
+      }
+      const validatedInput = currentInput as GameInput;
+      this.applyAction(validatedInput);
     }
-};
+  }
 
-export const processGameData = (data: GameData): string => {
-    if (!data || !data.name) {
-        throw new Error('Invalid game data');
+  private isValidGameInput(input: unknown): input is GameInput {
+    if (typeof input !== 'object' || input === null) {
+      return false;
     }
-    return `Game: ${data.name} - Genre: ${data.genre}`;
-};
+    const data = input as any;
+    if (typeof data.playerId !== 'string' || data.playerId.trim() === '') {
+      return false;
+    }
+    if (typeof data.action !== 'string' || !this.validActions.includes(data.action)) {
+      return false;
+    }
+    if (data.value !== undefined && typeof data.value !== 'number') {
+      return false;
+    }
+    if (data.timestamp !== undefined && typeof data.timestamp !== 'number') {
+      return false;
+    }
+    return true;
+  }
 
-export const getGameById = async (gameId: string): Promise<string> => {
-    const dataResult = await fetchGameData(gameId);
-    if ('error' in dataResult) {
-        return `Error: ${dataResult.error} (Code: ${dataResult.code})`;
+  private applyAction(input: GameInput): void {
+    console.log(`Processing action '${input.action}' for player ${input.playerId}`);
+    if (input.value !== undefined) {
+      console.log(`  Value: ${input.value}`);
     }
-    return processGameData(dataResult);
-};
+    // Apply game-specific effects
+    if (input.action === 'attack') {
+      console.log('  Attack executed');
+    } else if (input.action === 'collect') {
+      console.log('  Item collected');
+    }
+  }
+}
