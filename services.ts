@@ -1,58 +1,76 @@
-interface GameInput {
-  playerId: string;
-  action: string;
-  value?: number;
-  timestamp?: number;
+export interface Player {
+  id: string;
+  health: number;
 }
-
 export class GameService {
-  private validActions: string[] = ['move', 'jump', 'attack', 'collect'];
-
-  /**
-   * Processes inputs in main loop after validation.
-   */
-  processInputs(inputs: unknown[]): void {
-    for (let i = 0; i < inputs.length; i++) {
-      const currentInput = inputs[i];
-      if (!this.isValidGameInput(currentInput)) {
-        console.error(`Invalid input detected at index ${i}`);
-        continue;
+  private players: Map<string, Player> = new Map();
+  private gameActive: boolean = false;
+  // error handling for edge cases in gaming services
+  startGame(playerIds: string[]): void {
+    if (playerIds.length < 2) {
+      throw new Error('Need at least two players to start game');
+    }
+    if (this.gameActive) {
+      throw new Error('Game is already active');
+    }
+    this.players.clear();
+    playerIds.forEach(id => {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Invalid player ID');
       }
-      const validatedInput = currentInput as GameInput;
-      this.applyAction(validatedInput);
+      this.players.set(id, { id, health: 100 });
+    });
+    this.gameActive = true;
+  }
+  applyDamage(playerId: string, amount: number): void {
+    if (!this.gameActive) {
+      throw new Error('Game is not active');
+    }
+    if (amount <= 0) {
+      throw new Error('Damage amount must be positive');
+    }
+    const player = this.players.get(playerId);
+    if (!player) {
+      throw new Error('Player not found');
+    }
+    player.health -= amount;
+    if (player.health <= 0) {
+      player.health = 0;
+      this.endGame();
     }
   }
-
-  private isValidGameInput(input: unknown): input is GameInput {
-    if (typeof input !== 'object' || input === null) {
-      return false;
+  handleDisconnect(playerId: string): void {
+    if (!this.gameActive || !this.players.has(playerId)) {
+      return;
     }
-    const data = input as any;
-    if (typeof data.playerId !== 'string' || data.playerId.trim() === '') {
-      return false;
+    this.players.delete(playerId);
+    if (this.players.size < 2) {
+      this.endGame();
     }
-    if (typeof data.action !== 'string' || !this.validActions.includes(data.action)) {
-      return false;
-    }
-    if (data.value !== undefined && typeof data.value !== 'number') {
-      return false;
-    }
-    if (data.timestamp !== undefined && typeof data.timestamp !== 'number') {
-      return false;
-    }
-    return true;
   }
-
-  private applyAction(input: GameInput): void {
-    console.log(`Processing action '${input.action}' for player ${input.playerId}`);
-    if (input.value !== undefined) {
-      console.log(`  Value: ${input.value}`);
+  private endGame(): void {
+    this.gameActive = false;
+    this.players.clear();
+  }
+  getPlayerHealth(playerId: string): number | null {
+    const player = this.players.get(playerId);
+    if (!this.gameActive || !player) {
+      return null;
     }
-    // Apply game-specific effects
-    if (input.action === 'attack') {
-      console.log('  Attack executed');
-    } else if (input.action === 'collect') {
-      console.log('  Item collected');
+    return player.health;
+  }
+  // uses try catch to handle all edge case errors gracefully
+  processAction(playerId: string, actionType: string, value: number): string {
+    try {
+      switch (actionType) {
+        case 'damage':
+          this.applyDamage(playerId, value);
+          return 'success';
+        default:
+          throw new Error('Invalid action type');
+      }
+    } catch (e: unknown) {
+      return e instanceof Error ? `error: ${e.message}` : 'error';
     }
   }
 }
