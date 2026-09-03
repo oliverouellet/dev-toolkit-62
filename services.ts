@@ -1,46 +1,41 @@
-export interface GameState { score: number; level: number; }
+export interface GameEvent {
+  id: string;
+  payload: Record<string, unknown>;
+}
 
-export class GameError extends Error {
-  constructor(public message: string, public code: string) {
+export class GameServiceError extends Error {
+  constructor(public code: string, message: string) {
     super(message);
-    this.name = 'GameError';
+    this.name = 'GameServiceError';
   }
 }
 
-export const fetchGameState = async (playerId: string): Promise<GameState> => {
-  if (!playerId) {
-    throw new GameError('Invalid player ID provided', 'INVALID_ID');
-  }
-
+/**
+ * Processes game events with safety wrappers
+ */
+export const processEvent = async (event: GameEvent): Promise<boolean> => {
   try {
-    const response = await fetch(`/api/game/${playerId}`);
-    
-    if (response.status === 404) {
-      throw new GameError('Player data not found', 'NOT_FOUND');
-    }
-    
-    if (!response.ok) {
-      throw new GameError('Server communication failure', 'NETWORK_ERR');
+    if (!event.id) {
+      throw new GameServiceError('INVALID_ID', 'Event missing unique identifier');
     }
 
-    return await response.json();
-  } catch (err) {
-    if (err instanceof GameError) throw err;
-    
-    // Handle unexpected runtime exceptions
-    console.error('Unexpected sync failure:', err);
-    throw new GameError('Internal system error', 'SYSTEM_ERR');
-  }
-};
-
-export const safeUpdate = async (data: GameState): Promise<boolean> => {
-  try {
-    const res = await fetch('/api/update', { 
-      method: 'POST', 
-      body: JSON.stringify(data) 
+    const response = await fetch('/api/game/dispatch', {
+      method: 'POST',
+      body: JSON.stringify(event),
+      headers: { 'Content-Type': 'application/json' },
     });
-    return res.ok;
-  } catch (e) {
+
+    if (!response.ok) {
+      throw new GameServiceError('NETWORK_FAILURE', `Server returned ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    if (error instanceof GameServiceError) {
+      console.error(`[${error.code}] ${error.message}`);
+    } else {
+      console.error('UNEXPECTED_FAILURE', error);
+    }
     return false;
   }
 };
