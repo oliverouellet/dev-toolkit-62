@@ -1,44 +1,45 @@
-# Dev Toolkit 62
+# dev-toolkit-62
 
-Dev Toolkit 62 is a powerful set of utilities designed to enhance your TypeScript development workflow. By offering streamlined tools for code analysis, testing, and task automation, this toolkit aims to improve productivity and code quality for developers of all levels.
+A high-performance TypeScript utility library designed to streamline the development of browser-based gaming experiences. It provides robust abstractions for game loop management, state synchronization, and asset preloading.
 
 ## Features
-- **Code Linting & Formatting**: Automatically detects and fixes common TypeScript coding issues using ESLint and Prettier integration.
-- **Automated Testing**: Simplifies your testing process with built-in support for Jest, allowing you to write, run, and monitor tests seamlessly.
-- **Type Checking**: Leverages TypeScript's own type-checking capabilities to ensure your code adheres to correct types during development.
-- **Task Runner**: Includes a flexible task runner to automate common workflows—such as building, testing, and deploying—reducing repetitive manual tasks.
+
+*   **Ticker Engine:** A high-precision `requestAnimationFrame` wrapper that maintains a consistent delta-time for smooth physics simulations.
+*   **Asset Pipeline:** Asynchronous asset manager with built-in progress tracking for textures, audio, and JSON configuration files.
+*   **Input Observer:** Event-driven keyboard and mouse mapping system with support for chorded commands and customizable deadzones.
+*   **State Store:** A lightweight, reactive state container optimized for real-time game data updates without heavy re-renders.
 
 ## Installation
 
-To get started with Dev Toolkit 62, clone the repository and run the following commands:
+Install the package via npm or yarn:
 
 ```bash
-git clone https://github.com/yourusername/dev-toolkit-62.git
-cd dev-toolkit-62
-npm install
+npm install dev-toolkit-62
+# or
+yarn add dev-toolkit-62
 ```
 
-## Basic Usage
+## Usage
 
-Once installed, you can start utilizing the toolkit by using the following commands:
+Initialize the core engine and hook into the main update loop to manage your game state:
 
-```bash
-# Run linting
-npm run lint
+```typescript
+import { GameEngine, InputObserver } from 'dev-toolkit-62';
 
-# Run tests
-npm test
+const engine = new GameEngine({ targetFps: 60 });
+const input = new InputObserver();
 
-# Execute a build
-npm run build
+engine.onUpdate((delta) => {
+  if (input.isKeyDown('ArrowRight')) {
+    player.x += 5 * delta;
+  }
+});
+
+engine.start();
 ```
-
-You can customize the configuration files located in the `config` directory to suit your project needs.
 
 ## License
 
-![MIT License](https://img.shields.io/badge/license-MIT-brightgreen)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-With Dev Toolkit 62, you'll streamline your TypeScript development, enabling you to focus on building robust applications while maintaining clean and efficient code. Join us on this journey to elevate your development experience!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
