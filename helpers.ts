@@ -1,53 +1,40 @@
 /**
- * Performance utilities for dev-toolkit-62 game engine.
- * Provides memoization for expensive physics calculations.
+ * memoization wrapper for heavy entity calculations
+ * caches results based on object ID for frame consistency
  */
+export function memoizeEntityLogic<T>(fn: (id: string) => T): (id: string) => T {
+  const cache = new Map<string, T>();
 
-export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
-  const cache = new Map<string, ReturnType<T>>();
-
-  return ((...args: Parameters<T>) => {
-    const key = JSON.stringify(args);
-    if (cache.has(key)) {
-      return cache.get(key);
+  return (id: string): T => {
+    if (cache.has(id)) {
+      return cache.get(id)!;
     }
 
-    const result = fn(...args);
-    cache.set(key, result);
+    const result = fn(id);
+    cache.set(id, result);
 
-    // Prevent memory leaks in long-running sessions
+    // maintain heap size limit to prevent memory leaks
     if (cache.size > 1000) {
       const firstKey = cache.keys().next().value;
-      cache.delete(firstKey);
+      cache.delete(firstKey!);
     }
 
     return result;
-  }) as T;
-};
-
-/**
- * Throttles input processing to 60fps equivalent intervals
- */
-export const throttleInput = (callback: Function, limit: number = 16) => {
-  let wait = false;
-
-  return (...args: any[]) => {
-    if (!wait) {
-      callback(...args);
-      wait = true;
-      setTimeout(() => {
-        wait = false;
-      }, limit);
-    }
   };
-};
-
-export interface PerformanceMetrics {
-  frameTime: number;
-  memoryUsage: number;
 }
 
-export const getPerformanceSnapshot = (): PerformanceMetrics => ({
-  frameTime: performance.now(),
-  memoryUsage: (performance as any).memory?.usedJSHeapSize || 0
-});
+/**
+ * batch processing utility for entity state updates
+ * reduces redraw cycles in game loop
+ */
+export function throttleUpdates<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+  let lastExecution = 0;
+
+  return ((...args: any[]) => {
+    const now = Date.now();
+    if (now - lastExecution >= delay) {
+      lastExecution = now;
+      fn(...args);
+    }
+  }) as T;
+}
