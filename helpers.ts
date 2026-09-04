@@ -1,43 +1,53 @@
 /**
- * dev-toolkit-62: high-frequency game loop performance helpers
+ * Performance utilities for dev-toolkit-62 game engine.
+ * Provides memoization for expensive physics calculations.
  */
 
-export interface PerformanceBuffer {
-  readonly timestamps: Float64Array;
-  ptr: number;
-  size: number;
-}
+export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+  const cache = new Map<string, ReturnType<T>>();
 
-/**
- * memoized frame timing tracker to reduce garbage collection
- */
-export const createFrameBuffer = (size: number = 60): PerformanceBuffer => ({
-  timestamps: new Float64Array(size),
-  ptr: 0,
-  size,
-});
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
 
-/**
- * efficient circular buffer update for rolling average metrics
- */
-export const updateFrameBuffer = (buffer: PerformanceBuffer, now: number): number => {
-  buffer.timestamps[buffer.ptr] = now;
-  const old = buffer.timestamps[(buffer.ptr + 1) % buffer.size];
-  buffer.ptr = (buffer.ptr + 1) % buffer.size;
-  
-  return now - old;
+    const result = fn(...args);
+    cache.set(key, result);
+
+    // Prevent memory leaks in long-running sessions
+    if (cache.size > 1000) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
+
+    return result;
+  }) as T;
 };
 
 /**
- * throttle frequent state updates to prevent UI thread lock
+ * Throttles input processing to 60fps equivalent intervals
  */
-export const createThrottler = (limit: number) => {
-  let last = 0;
-  return (callback: () => void) => {
-    const now = performance.now();
-    if (now - last >= limit) {
-      callback();
-      last = now;
+export const throttleInput = (callback: Function, limit: number = 16) => {
+  let wait = false;
+
+  return (...args: any[]) => {
+    if (!wait) {
+      callback(...args);
+      wait = true;
+      setTimeout(() => {
+        wait = false;
+      }, limit);
     }
   };
 };
+
+export interface PerformanceMetrics {
+  frameTime: number;
+  memoryUsage: number;
+}
+
+export const getPerformanceSnapshot = (): PerformanceMetrics => ({
+  frameTime: performance.now(),
+  memoryUsage: (performance as any).memory?.usedJSHeapSize || 0
+});
