@@ -1,76 +1,48 @@
-export interface PlayerStats {
-  name: string;
-  health: number;
-  attack: number;
-  defense: number;
-  speed: number;
+/**
+ * Represents the detailed outcome of a damage calculation in an RPG.
+ */
+export interface DamageResult {
+  /** The final calculated damage points. */
+  damage: number;
+  /** Indicates if the damage was a critical hit. */
+  isCritical: boolean;
 }
 
 /**
- * Creates a new player with default stats for the given level.
- * @param name - Player's name
- * @param level - Starting level
- * @returns New player stats object
+ * Calculates the final damage dealt based on attacker stats and defender defense.
+ * 
+ * @param attackPower - The base attack power of the attacker.
+ * @param defense - The physical defense score of the target.
+ * @param criticalChance - Chance of landing a critical hit (value between 0.0 and 1.0).
+ * @param criticalMultiplier - Damage multiplier on critical hit (defaults to 1.5).
+ * @returns The resulting DamageResult object.
  */
-export function createPlayer(name: string, level: number): PlayerStats {
+export function calculateDamage(
+  attackPower: number,
+  defense: number,
+  criticalChance: number,
+  criticalMultiplier: number = 1.5
+): DamageResult {
+  const isCritical = Math.random() < criticalChance;
+  const baseDamage = Math.max(1, attackPower - defense * 0.5);
+  const finalDamage = isCritical ? baseDamage * criticalMultiplier : baseDamage;
+
   return {
-    name,
-    health: 100 + (level * 10),
-    attack: 10 + (level * 2),
-    defense: 5 + (level * 1),
-    speed: 10 + (level * 0.5)
+    damage: Math.round(finalDamage),
+    isCritical,
   };
 }
 
 /**
- * Applies damage to player stats, ensuring health doesn't go below zero.
- * @param stats - Current player stats
- * @param damage - Amount of damage to apply
- * @returns Updated stats with reduced health
+ * Computes the experience points (XP) required to reach a specific character level.
+ * Uses an exponential curve suitable for RPG progression systems.
+ * 
+ * @param level - The target level to calculate XP requirements for.
+ * @returns The amount of total XP needed.
  */
-export function applyDamage(stats: PlayerStats, damage: number): PlayerStats {
-  const newHealth = Math.max(0, stats.health - damage);
-  return { ...stats, health: newHealth };
-}
-
-/**
- * Calculates total power based on player stats.
- * @param stats - Player stats
- * @returns Sum of attack and defense
- */
-export function calculatePower(stats: PlayerStats): number {
-  return stats.attack + stats.defense;
-}
-
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic';
-
-export interface LootItem {
-  name: string;
-  rarity: Rarity;
-  value: number;
-}
-
-/**
- * Generates loot item based on level and random chance.
- * @param level - Current game level
- * @returns A loot item
- */
-export function generateLoot(level: number): LootItem {
-  const rand = Math.random();
-  let rarity: Rarity;
-  let value: number;
-  if (rand < 0.5) {
-    rarity = 'common';
-    value = level * 10;
-  } else if (rand < 0.8) {
-    rarity = 'uncommon';
-    value = level * 25;
-  } else if (rand < 0.95) {
-    rarity = 'rare';
-    value = level * 50;
-  } else {
-    rarity = 'epic';
-    value = level * 100;
-  }
-  return { name: `${rarity} loot`, rarity, value };
+export function calculateXpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  const baseXP = 100;
+  const exponent = 1.5;
+  return Math.floor(baseXP * Math.pow(level - 1, exponent));
 }
