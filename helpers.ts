@@ -1,49 +1,56 @@
 /**
- * High-performance generic object pool to reduce GC pressure during frame updates.
+ * Vector 2D representation for spatial gaming calculations.
  */
-export class ObjectPool<T> {
-  private pool: T[] = [];
-  private factory: () => T;
-  private resetFn: (item: T) => void;
+export interface Vector2D {
+  x: number;
+  y: number;
+}
 
-  constructor(factory: () => T, resetFn: (item: T) => void, initialSize = 100) {
-    this.factory = factory;
-    this.resetFn = resetFn;
-    this.prewarm(initialSize);
-  }
+/**
+ * Calculates the Euclidean distance between two points.
+ */
+export function getDistance(p1: Vector2D, p2: Vector2D): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
-  private prewarm(size: number): void {
-    for (let i = 0; i < size; i++) {
-      this.pool.push(this.factory());
-    }
-  }
+/**
+ * Linearly interpolates between two numbers.
+ */
+export function lerp(start: number, end: number, t: number): number {
+  return start + (end - start) * Math.max(0, Math.min(1, t));
+}
 
-  /**
-   * Acquires an object from the pool or instantiates a new one if exhausted.
-   */
-  public acquire(): T {
-    return this.pool.pop() ?? this.factory();
-  }
+/**
+ * Linearly interpolates between two 2D vectors.
+ */
+export function lerp2D(start: Vector2D, end: Vector2D, t: number): Vector2D {
+  return {
+    x: lerp(start.x, end.x, t),
+    y: lerp(start.y, end.y, t),
+  };
+}
 
-  /**
-   * Returns an object to the pool after resetting its state.
-   */
-  public release(item: T): void {
-    this.resetFn(item);
-    this.pool.push(item);
-  }
+/**
+ * Converts grid coordinates to screen pixel coordinates.
+ */
+export function gridToScreen(
+  gridX: number,
+  gridY: number,
+  tileSize: number,
+  offsetX: number = 0,
+  offsetY: number = 0
+): Vector2D {
+  return {
+    x: gridX * tileSize + offsetX,
+    y: gridY * tileSize + offsetY,
+  };
+}
 
-  /**
-   * Clears all cached instances in the pool.
-   */
-  public clear(): void {
-    this.pool.length = 0;
-  }
-
-  /**
-   * Returns the current number of available idle objects in the pool.
-   */
-  public get size(): number {
-    return this.pool.length;
-  }
+/**
+ * Constrains a value within specified min and max bounds.
+ */
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
