@@ -1,1 +1,45 @@
-export interface Game {\n    id: number;\n    title: string;\n    genre: string;\n    releaseDate: Date;\n    description: string;\n}\n\nexport interface Player {\n    id: number;\n    username: string;\n    score: number;\n    gameId: number;\n}\n\nexport type GameStatus = 'pending' | 'active' | 'completed';\n\nexport interface GameSession {\n    sessionId: number;\n    gameId: number;\n    players: Player[];\n    startTime: Date;\n    endTime?: Date;\n    status: GameStatus;\n}\n\nexport interface GameResult {\n    gameId: number;\n    playerId: number;\n    score: number;\n    timestamp: Date;\n}\n
+/**
+ * Core gaming interfaces for dev-toolkit-62
+ */
+
+export interface GameEntity {
+  id: string;
+  name: string;
+  position: Vector3;
+  isActive: boolean;
+}
+
+export interface Vector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface GameConfig {
+  renderScale: number;
+  maxPlayers: number;
+  isDebugMode: boolean;
+  serverAddress: string;
+}
+
+export type EntityUpdate = Partial<Pick<GameEntity, 'position' | 'isActive'>>;
+
+export interface ActionResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Validates position coordinates
+ */
+export function isValidPosition(pos: Vector3): boolean {
+  return !isNaN(pos.x) && !isNaN(pos.y) && !isNaN(pos.z);
+}
+
+export const DEFAULT_CONFIG: GameConfig = {
+  renderScale: 1.0,
+  maxPlayers: 32,
+  isDebugMode: false,
+  serverAddress: '127.0.0.1'
+};
