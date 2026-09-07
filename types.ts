@@ -1,45 +1,34 @@
-/**
- * Core gaming interfaces for dev-toolkit-62
- */
-
 export interface GameEntity {
   id: string;
   name: string;
-  position: Vector3;
-  isActive: boolean;
+  position: { x: number; y: number };
+  active: boolean;
 }
 
-export interface Vector3 {
-  x: number;
-  y: number;
-  z: number;
+export interface PlayerState extends GameEntity {
+  score: number;
+  inventory: string[];
 }
 
 export interface GameConfig {
-  renderScale: number;
   maxPlayers: number;
-  isDebugMode: boolean;
-  serverAddress: string;
+  tickRate: number;
+  region: string;
 }
 
-export type EntityUpdate = Partial<Pick<GameEntity, 'position' | 'isActive'>>;
+export type EntityUpdate = Partial<Pick<GameEntity, 'position' | 'active'>>;
 
-export interface ActionResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+export enum GameStatus {
+  Idle = 'IDLE',
+  Running = 'RUNNING',
+  Paused = 'PAUSED',
+  Finished = 'FINISHED'
 }
 
-/**
- * Validates position coordinates
- */
-export function isValidPosition(pos: Vector3): boolean {
-  return !isNaN(pos.x) && !isNaN(pos.y) && !isNaN(pos.z);
+export interface SystemMetrics {
+  memoryUsage: number;
+  activeEntities: number;
+  latency: number;
 }
 
-export const DEFAULT_CONFIG: GameConfig = {
-  renderScale: 1.0,
-  maxPlayers: 32,
-  isDebugMode: false,
-  serverAddress: '127.0.0.1'
-};
+export type Callback<T> = (data: T) => void;
