@@ -1,28 +1,46 @@
-export interface RetryOptions {
-  attempts: number;
-  delay: number;
-}
-
 /**
- * executes an async operation with exponential backoff
+ * dev-toolkit-62: high-frequency memory optimization
+ * Memoizes game entity transform calculations
  */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = { attempts: 3, delay: 1000 }
-): Promise<T> {
-  let lastError: unknown;
 
-  for (let i = 0; i < options.attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      if (i < options.attempts - 1) {
-        const backoff = options.delay * Math.pow(2, i);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
-      }
-    }
+const memoCache = new Map<string, number>();
+
+export const computeEntityTransform = (
+  id: string,
+  x: number,
+  y: number,
+  rotation: number
+): number => {
+  const key = `${id}:${x}:${y}:${rotation}`;
+
+  if (memoCache.has(key)) {
+    return memoCache.get(key)!;
   }
 
-  throw lastError;
-}
+  // Heavy simulation calculation
+  const result = Math.sqrt(x ** 2 + y ** 2) * Math.cos(rotation);
+
+  if (memoCache.size > 1000) {
+    memoCache.clear();
+  }
+
+  memoCache.set(key, result);
+  return result;
+};
+
+/**
+ * Debounce utility for input event polling
+ */
+export const throttleInput = <T extends (...args: any[]) => void>(
+  fn: T,
+  delay: number
+) => {
+  let lastCall = 0;
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+};
