@@ -1,35 +1,31 @@
-export interface GameConfig {
-  renderScale: number;
-  audioEnabled: boolean;
-  maxPlayers: number;
-  serverAddress: string;
+export interface GameEntity {
+  id: string;
+  name: string;
+  active: boolean;
 }
 
-const DEFAULT_CONFIG: GameConfig = {
-  renderScale: 1.0,
-  audioEnabled: true,
-  maxPlayers: 32,
-  serverAddress: 'localhost:8080',
+/**
+ * Filters active entities and maps to IDs for game loops
+ */
+export const getActiveEntityIds = (entities: GameEntity[]): string[] => {
+  return entities
+    .filter((entity) => entity.active)
+    .map((entity) => entity.id);
 };
 
 /**
- * Merges partial config with defaults for gaming engine
+ * Normalizes coordinate inputs for grid-based movement
  */
-export function loadConfig(userConfig: Partial<GameConfig>): GameConfig {
+export const normalizeCoordinates = (x: number, y: number): { x: number; y: number } => {
   return {
-    ...DEFAULT_CONFIG,
-    ...userConfig,
+    x: Math.round(x),
+    y: Math.round(y),
   };
-}
+};
 
 /**
- * Validates that config constraints are met
+ * Generates deterministic lookup key for entity cache
  */
-export function validateConfig(config: GameConfig): boolean {
-  return (
-    config.renderScale > 0 &&
-    config.renderScale <= 2.0 &&
-    config.maxPlayers > 0 &&
-    config.maxPlayers <= 128
-  );
-}
+export const generateEntityKey = (type: string, id: string): string => {
+  return `${type.toLowerCase()}:${id}`;
+};
