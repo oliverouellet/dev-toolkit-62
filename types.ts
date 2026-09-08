@@ -1,34 +1,41 @@
+/**
+ * Core gaming domain types for dev-toolkit-62
+ */
+
 export interface GameEntity {
   id: string;
   name: string;
-  position: { x: number; y: number };
-  active: boolean;
+  version: string;
+  metadata: Record<string, unknown>;
 }
 
-export interface PlayerState extends GameEntity {
-  score: number;
-  inventory: string[];
+export interface EngineConfig {
+  renderMode: 'software' | 'hardware';
+  targetFps: number;
+  enableDebugOverlay: boolean;
 }
 
-export interface GameConfig {
-  maxPlayers: number;
-  tickRate: number;
-  region: string;
+export interface AssetManifest {
+  assetId: string;
+  path: string;
+  type: 'texture' | 'audio' | 'shader';
+  preload: boolean;
 }
 
-export type EntityUpdate = Partial<Pick<GameEntity, 'position' | 'active'>>;
+export type PluginStatus = 'active' | 'inactive' | 'error';
 
-export enum GameStatus {
-  Idle = 'IDLE',
-  Running = 'RUNNING',
-  Paused = 'PAUSED',
-  Finished = 'FINISHED'
+export interface ToolkitPlugin {
+  id: string;
+  status: PluginStatus;
+  init: () => Promise<void>;
+  dispose: () => void;
 }
 
-export interface SystemMetrics {
-  memoryUsage: number;
-  activeEntities: number;
-  latency: number;
+export interface AnalyticsEvent {
+  timestamp: number;
+  category: string;
+  action: string;
+  value?: number;
 }
 
-export type Callback<T> = (data: T) => void;
+export type Registry<T> = Map<string, T>;
