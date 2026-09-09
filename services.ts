@@ -1,39 +1,43 @@
-interface GameInput {
-  action: string;
+import { GameState } from './types';
+
+const CACHE_TTL = 5000;
+
+interface CachedData {
+  data: GameState;
   timestamp: number;
-  sequenceId: number;
 }
 
-/**
- * validates user input payloads for game loop processing
- */
-const validateInput = (input: unknown): input is GameInput => {
-  if (typeof input !== 'object' || input === null) return false;
-  const i = input as Record<string, unknown>;
-  return (
-    typeof i.action === 'string' &&
-    typeof i.timestamp === 'number' &&
-    typeof i.sequenceId === 'number'
-  );
+// performance optimization via memory caching
+const stateCache: Map<string, CachedData> = new Map();
+
+export const getGameState = (gameId: string, fetcher: (id: string) => Promise<GameState>): Promise<GameState> => {
+  const now = Date.now();
+  const cached = stateCache.get(gameId);
+
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    return Promise.resolve(cached.data);
+  }
+
+  return fetcher(gameId).then((data) => {
+    stateCache.set(gameId, { data, timestamp: now });
+    return data;
+  });
 };
 
-/**
- * main process loop for gaming inputs
- */
-export const processGameLoop = (queue: unknown[]): void => {
-  for (const rawInput of queue) {
-    if (!validateInput(rawInput)) {
-      console.warn('dropped invalid input packet', rawInput);
-      continue;
-    }
-
-    const { action, sequenceId } = rawInput;
-    console.log(`executing action: ${action} [seq: ${sequenceId}]`);
-    
-    // state update logic would go here
+export const clearCache = (gameId?: string): void => {
+  if (gameId) {
+    stateCache.delete(gameId);
+  } else {
+    stateCache.clear();
   }
 };
 
-// example usage
-const inputQueue = [{ action: 'jump', timestamp: 12345, sequenceId: 1 }, { invalid: true }];
-processGameLoop(inputQueue);
+// periodic cache cleanup to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of stateCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      stateCache.delete(key);
+    }
+  }
+}, CACHE_TTL);
