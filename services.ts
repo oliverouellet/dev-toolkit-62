@@ -1,72 +1,39 @@
-export interface PlayerScore {
-  playerId: string;
-  username: string;
-  score: number;
+interface GameInput {
+  action: string;
   timestamp: number;
-  metadata?: Record<string, unknown>;
-}
-
-export interface LeaderboardPage {
-  entries: Array<PlayerScore & { rank: number }>;
-  totalPlayers: number;
-  page: number;
-  totalPages: number;
+  sequenceId: number;
 }
 
 /**
- * Service for managing in-memory player scores and ranking data.
+ * validates user input payloads for game loop processing
  */
-export class LeaderboardService {
-  private scores: Map<string, PlayerScore> = new Map();
+const validateInput = (input: unknown): input is GameInput => {
+  if (typeof input !== 'object' || input === null) return false;
+  const i = input as Record<string, unknown>;
+  return (
+    typeof i.action === 'string' &&
+    typeof i.timestamp === 'number' &&
+    typeof i.sequenceId === 'number'
+  );
+};
 
-  public submitScore(entry: Omit<PlayerScore, 'timestamp'>): void {
-    const existing = this.scores.get(entry.playerId);
-    if (!existing || entry.score > existing.score) {
-      this.scores.set(entry.playerId, {
-        ...entry,
-        timestamp: Date.now(),
-      });
+/**
+ * main process loop for gaming inputs
+ */
+export const processGameLoop = (queue: unknown[]): void => {
+  for (const rawInput of queue) {
+    if (!validateInput(rawInput)) {
+      console.warn('dropped invalid input packet', rawInput);
+      continue;
     }
+
+    const { action, sequenceId } = rawInput;
+    console.log(`executing action: ${action} [seq: ${sequenceId}]`);
+    
+    // state update logic would go here
   }
+};
 
-  public getPlayerRank(playerId: string): number | null {
-    if (!this.scores.has(playerId)) {
-      return null;
-    }
-
-    const sorted = this.getSortedScores();
-    const index = sorted.findIndex((s) => s.playerId === playerId);
-    return index !== -1 ? index + 1 : null;
-  }
-
-  public getTopPage(page: number = 1, pageSize: number = 10): LeaderboardPage {
-    const sorted = this.getSortedScores();
-    const totalPlayers = sorted.length;
-    const totalPages = Math.ceil(totalPlayers / pageSize) || 1;
-    const safePage = Math.max(1, Math.min(page, totalPages));
-
-    const startIndex = (safePage - 1) * pageSize;
-    const pageEntries = sorted.slice(startIndex, startIndex + pageSize);
-
-    const entriesWithRank = pageEntries.map((entry, idx) => ({
-      ...entry,
-      rank: startIndex + idx + 1,
-    }));
-
-    return {
-      entries: entriesWithRank,
-      totalPlayers,
-      page: safePage,
-      totalPages,
-    };
-  }
-
-  private getSortedScores(): PlayerScore[] {
-    return Array.from(this.scores.values()).sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return a.timestamp - b.timestamp; // Earlier timestamp wins ties
-    });
-  }
-}
+// example usage
+const inputQueue = [{ action: 'jump', timestamp: 12345, sequenceId: 1 }, { invalid: true }];
+processGameLoop(inputQueue);
