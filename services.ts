@@ -1,43 +1,38 @@
-import { GameState } from './types';
-
-const CACHE_TTL = 5000;
-
-interface CachedData {
-  data: GameState;
-  timestamp: number;
+export interface RetryConfig {
+  maxAttempts: number;
+  delayMs: number;
 }
 
-// performance optimization via memory caching
-const stateCache: Map<string, CachedData> = new Map();
+/**
+ * Executes an async function with exponential backoff for gaming API stability
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  config: RetryConfig = { maxAttempts: 3, delayMs: 1000 }
+): Promise<T> {
+  let lastError: unknown;
 
-export const getGameState = (gameId: string, fetcher: (id: string) => Promise<GameState>): Promise<GameState> => {
-  const now = Date.now();
-  const cached = stateCache.get(gameId);
-
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    return Promise.resolve(cached.data);
-  }
-
-  return fetcher(gameId).then((data) => {
-    stateCache.set(gameId, { data, timestamp: now });
-    return data;
-  });
-};
-
-export const clearCache = (gameId?: string): void => {
-  if (gameId) {
-    stateCache.delete(gameId);
-  } else {
-    stateCache.clear();
-  }
-};
-
-// periodic cache cleanup to prevent memory leaks
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of stateCache.entries()) {
-    if (now - entry.timestamp > CACHE_TTL) {
-      stateCache.delete(key);
+  for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < config.maxAttempts) {
+        const backoff = config.delayMs * Math.pow(2, attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+      }
     }
   }
-}, CACHE_TTL);
+
+  throw lastError;
+}
+
+export async function fetchGameData<T>(endpoint: string): Promise<T> {
+  return withRetry(async () => {
+    const response = await fetch(`https://api.dev-toolkit-62.internal/${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`Network response error: ${response.status}`);
+    }
+    return response.json() as Promise<T>;
+  });
+}
