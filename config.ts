@@ -1,65 +1,47 @@
-export interface GameSettings {
-  graphics: {
-    resolution: string;
-    qualityLevel: number;
-    enableShadows: boolean;
-  };
-  audio: {
-    masterVolume: number;
-    musicVolume: number;
-  };
-  controls: {
-    sensitivity: number;
-    invertY: boolean;
-  };
+export interface GameConfig {
+  maxPlayers: number;
+  region: string;
 }
 
-const defaultSettings: GameSettings = {
-  graphics: {
-    resolution: '1920x1080',
-    qualityLevel: 2,
-    enableShadows: true,
-  },
-  audio: {
-    masterVolume: 0.75,
-    musicVolume: 0.5,
-  },
-  controls: {
-    sensitivity: 1.0,
-    invertY: false,
-  },
-};
-
-/**
- * Recursively merges user configuration with defaults.
- * Ensures all required fields are present.
- */
-function deepMerge<T extends object>(target: T, source: Partial<T>): T {
-  const output = { ...target };
-  if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key as keyof T])) {
-        if (!(key in target)) {
-          Object.assign(output, { [key]: source[key as keyof T] });
-        } else {
-          (output as any)[key] = deepMerge((target as any)[key], source[key as keyof T] as any);
-        }
-      } else {
-        Object.assign(output, { [key]: source[key as keyof T] });
-      }
-    });
+export class ConfigValidationError extends Error {
+  constructor(public field: string, message: string) {
+    super(message);
+    this.name = 'ConfigValidationError';
   }
-  return output;
-}
-
-function isObject(item: any): item is object {
-  return item && typeof item === 'object' && !Array.isArray(item);
 }
 
 /**
- * Loads game configuration applying defaults where necessary.
- * @param userConfig Partial configuration from user or file.
+ * Validates game configuration settings
+ * throws ConfigValidationError on invalid input
  */
-export function loadConfig(userConfig: Partial<GameSettings> = {}): GameSettings {
-  return deepMerge(defaultSettings, userConfig);
+export function validateConfig(config: unknown): GameConfig {
+  if (!config || typeof config !== 'object') {
+    throw new ConfigValidationError('root', 'Configuration must be an object');
+  }
+
+  const c = config as Record<string, any>;
+
+  if (typeof c.maxPlayers !== 'number' || c.maxPlayers <= 0) {
+    throw new ConfigValidationError('maxPlayers', 'Must be a positive integer');
+  }
+
+  if (typeof c.region !== 'string' || c.region.length < 2) {
+    throw new ConfigValidationError('region', 'Region code must be at least 2 characters');
+  }
+
+  return {
+    maxPlayers: c.maxPlayers,
+    region: c.region
+  };
 }
+
+export const safeLoadConfig = (raw: unknown): GameConfig | null => {
+  try {
+    return validateConfig(raw);
+  } catch (err) {
+    if (err instanceof ConfigValidationError) {
+      console.error(`Config Error [${err.field}]: ${err.message}`);
+    }
+    return null;
+  }
+};
