@@ -1,32 +1,45 @@
-export interface GameConfig {
-  renderScale: number;
-  maxFps: number;
-  enableAudio: boolean;
-  assetPath: string;
-}
+/**
+ * dev-toolkit-62 performance optimization
+ * Memoized calculation engine for frame-time scaling
+ */
 
-const DEFAULT_CONFIG: GameConfig = {
-  renderScale: 1.0,
-  maxFps: 60,
-  enableAudio: true,
-  assetPath: './assets',
+const memoizationCache = new Map<string, number>();
+
+export const getScaledFrameTime = (delta: number, factor: number): number => {
+  const key = `${delta}:${factor}`;
+  
+  if (memoizationCache.has(key)) {
+    return memoizationCache.get(key)!;
+  }
+
+  // Limit cache size to prevent memory leaks in long game sessions
+  if (memoizationCache.size > 1000) {
+    memoizationCache.clear();
+  }
+
+  const result = delta * factor;
+  memoizationCache.set(key, result);
+  return result;
 };
 
 /**
- * Merges user-provided configuration with internal defaults.
+ * Batch updates for high-frequency game events
  */
-export function loadConfig(userConfig: Partial<GameConfig>): GameConfig {
-  return {
-    ...DEFAULT_CONFIG,
-    ...userConfig,
+export function debounceRender<T extends (...args: any[]) => void>(fn: T, delay: number = 16): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
   };
 }
 
-/**
- * Validates that the configuration meets range constraints.
- */
-export function validateConfig(config: GameConfig): boolean {
-  if (config.renderScale <= 0 || config.renderScale > 4) return false;
-  if (config.maxFps < 30 || config.maxFps > 240) return false;
-  return true;
+export interface PerformanceMetrics {
+  fps: number;
+  ms: number;
 }
+
+export const formatMetrics = (ms: number): PerformanceMetrics => ({
+  ms,
+  fps: Math.round(1000 / Math.max(ms, 1))
+});
