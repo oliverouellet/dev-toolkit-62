@@ -1,46 +1,33 @@
-export interface RetryOptions {
-  maxAttempts: number;
-  delayMs: number;
-}
-
-/**
- * Executes an asynchronous function with exponential backoff strategy
- */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: RetryOptions = { maxAttempts: 3, delayMs: 1000 }
+  retries: number = 3,
+  delay: number = 1000
 ): Promise<T> {
   let lastError: unknown;
 
-  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
+  for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await operation();
-    } catch (error) {
-      lastError = error;
-      
-      if (attempt === options.maxAttempts) break;
-      
-      // Exponential backoff calculation
-      const backoff = options.delayMs * Math.pow(2, attempt - 1);
-      await new Promise((resolve) => setTimeout(resolve, backoff));
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
+      }
     }
   }
 
   throw lastError;
 }
 
-/**
- * Wrapper for game network requests
- */
-export const fetchWithRetry = <T>(
-  url: string,
-  init?: RequestInit
-): Promise<T> => {
+export interface GamePayload {
+  id: string;
+  status: string;
+}
+
+export async function fetchGameState(id: string): Promise<GamePayload> {
   return withRetry(async () => {
-    const response = await fetch(url, init);
-    if (!response.ok) {
-      throw new Error(`Network response error: ${response.status}`);
-    }
-    return response.json() as Promise<T>;
+    const response = await fetch(`/api/v1/games/${id}`);
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    return response.json();
   });
-};
+}
