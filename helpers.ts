@@ -1,45 +1,37 @@
 /**
- * dev-toolkit-62 performance optimization
- * Memoized calculation engine for frame-time scaling
+ * Represents a game entity with coordinate tracking
  */
+export interface GameEntity {
+  id: string;
+  x: number;
+  y: number;
+  active: boolean;
+}
 
-const memoizationCache = new Map<string, number>();
-
-export const getScaledFrameTime = (delta: number, factor: number): number => {
-  const key = `${delta}:${factor}`;
-  
-  if (memoizationCache.has(key)) {
-    return memoizationCache.get(key)!;
-  }
-
-  // Limit cache size to prevent memory leaks in long game sessions
-  if (memoizationCache.size > 1000) {
-    memoizationCache.clear();
-  }
-
-  const result = delta * factor;
-  memoizationCache.set(key, result);
-  return result;
+/**
+ * Calculates Manhattan distance between two game entities
+ */
+export const getDistance = (a: GameEntity, b: GameEntity): number => {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 };
 
 /**
- * Batch updates for high-frequency game events
+ * Normalizes entity coordinates to grid boundaries
  */
-export function debounceRender<T extends (...args: any[]) => void>(fn: T, delay: number = 16): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), delay);
-  };
-}
+export const clampPosition = (pos: number, min: number, max: number): number => {
+  return Math.min(Math.max(pos, min), max);
+};
 
-export interface PerformanceMetrics {
-  fps: number;
-  ms: number;
-}
+/**
+ * Filters a list of entities to return only active ones
+ */
+export const getActiveEntities = (entities: GameEntity[]): GameEntity[] => {
+  return entities.filter((e) => e.active);
+};
 
-export const formatMetrics = (ms: number): PerformanceMetrics => ({
-  ms,
-  fps: Math.round(1000 / Math.max(ms, 1))
-});
+/**
+ * Generates a mock identifier for new game objects
+ */
+export const generateEntityId = (prefix: string = 'ent'): string => {
+  return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
+};
