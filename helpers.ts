@@ -1,37 +1,48 @@
 /**
- * Represents a game entity with coordinate tracking
+ * dev-toolkit-62: gaming utility helpers
  */
-export interface GameEntity {
+
+export interface GameState {
   id: string;
-  x: number;
-  y: number;
+  score: number;
   active: boolean;
 }
 
 /**
- * Calculates Manhattan distance between two game entities
+ * Normalizes input coordinates to game grid bounds
  */
-export const getDistance = (a: GameEntity, b: GameEntity): number => {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+export const clampToGrid = (value: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(max, value));
 };
 
 /**
- * Normalizes entity coordinates to grid boundaries
+ * Calculates interpolation between game ticks
  */
-export const clampPosition = (pos: number, min: number, max: number): number => {
-  return Math.min(Math.max(pos, min), max);
+export const lerp = (start: number, end: number, alpha: number): number => {
+  return start + (end - start) * alpha;
 };
 
 /**
- * Filters a list of entities to return only active ones
+ * Safely parses game configuration strings
  */
-export const getActiveEntities = (entities: GameEntity[]): GameEntity[] => {
-  return entities.filter((e) => e.active);
+export const parseConfigValue = <T>(value: string, fallback: T): T => {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
 };
 
 /**
- * Generates a mock identifier for new game objects
+ * Formats score for UI rendering
  */
-export const generateEntityId = (prefix: string = 'ent'): string => {
-  return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
+export const formatScore = (score: number): string => {
+  return score.toString().padStart(6, '0');
+};
+
+/**
+ * Random integer generator for spawn locations
+ */
+export const getRandomInt = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
