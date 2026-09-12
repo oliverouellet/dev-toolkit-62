@@ -1,34 +1,30 @@
-export interface GameEntity {
-  id: string;
-  name: string;
-  tags: string[];
-  metadata: Record<string, unknown>;
+export type GameState = 'idle' | 'loading' | 'active' | 'error';
+
+export interface GameError extends Error {
+  code: string;
+  retryable: boolean;
 }
 
-export interface PlayerStats {
-  score: number;
-  level: number;
-  lastActive: Date;
+export class ToolkitError extends Error implements GameError {
+  public readonly code: string;
+  public readonly retryable: boolean;
+
+  constructor(message: string, code: string, retryable: boolean = false) {
+    super(message);
+    this.code = code;
+    this.retryable = retryable;
+    Object.setPrototypeOf(this, ToolkitError.prototype);
+  }
 }
 
-export type EntityMap = Map<string, GameEntity>;
+export const handleGameException = (error: unknown): GameError => {
+  if (error instanceof ToolkitError) {
+    return error;
+  }
 
-export interface ToolkitConfig {
-  version: string;
-  maxPlayers: number;
-  debugMode: boolean;
-}
+  if (error instanceof Error) {
+    return new ToolkitError(error.message, 'INTERNAL_ERROR', false);
+  }
 
-export enum EntityType {
-  Player = 'player',
-  NPC = 'npc',
-  Item = 'item'
-}
-
-export type Callback = (err?: Error) => void;
-
-export interface SyncPayload {
-  entityId: string;
-  data: Partial<GameEntity>;
-  timestamp: number;
-}
+  return new ToolkitError('Unknown gaming engine error occurred', 'UNKNOWN_FAILURE', true);
+};
