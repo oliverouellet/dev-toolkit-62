@@ -1,33 +1,43 @@
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  retries: number = 3,
-  delay: number = 1000
-): Promise<T> {
-  let lastError: unknown;
+import { GameState } from './types';
 
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      return await operation();
-    } catch (err) {
-      lastError = err;
-      if (attempt < retries - 1) {
-        await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
-      }
+/**
+ * Optimized state processor using memoization and spatial partitioning
+ * to handle high-frequency entity updates in gaming environment.
+ */
+export class PerformanceOptimizer {
+  private static cache: Map<string, any> = new Map();
+  private static readonly CACHE_LIMIT = 1000;
+
+  public static processEntityUpdates(state: GameState): GameState {
+    const hash = JSON.stringify(state.entities.map(e => e.id + e.pos.x + e.pos.y));
+
+    if (this.cache.has(hash)) {
+      return this.cache.get(hash);
     }
+
+    const optimized = this.applySpatialFiltering(state);
+
+    if (this.cache.size >= this.CACHE_LIMIT) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+
+    this.cache.set(hash, optimized);
+    return optimized;
   }
 
-  throw lastError;
-}
+  private static applySpatialFiltering(state: GameState): GameState {
+    // Remove entities outside viewport to save render cycle overhead
+    return {
+      ...state,
+      entities: state.entities.filter(e => 
+        e.pos.x >= 0 && e.pos.x <= 1920 && 
+        e.pos.y >= 0 && e.pos.y <= 1080
+      )
+    };
+  }
 
-export interface GamePayload {
-  id: string;
-  status: string;
-}
-
-export async function fetchGameState(id: string): Promise<GamePayload> {
-  return withRetry(async () => {
-    const response = await fetch(`/api/v1/games/${id}`);
-    if (!response.ok) throw new Error(`Status ${response.status}`);
-    return response.json();
-  });
+  public static clearCache(): void {
+    this.cache.clear();
+  }
 }
