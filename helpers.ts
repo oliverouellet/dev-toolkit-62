@@ -1,48 +1,35 @@
-/**
- * dev-toolkit-62: gaming utility helpers
- */
+import { readFileSync, existsSync } from 'fs';
 
-export interface GameState {
-  id: string;
-  score: number;
-  active: boolean;
+export interface GameConfig {
+  serverTickRate: number;
+  maxPlayers: number;
+  debugMode: boolean;
 }
 
-/**
- * Normalizes input coordinates to game grid bounds
- */
-export const clampToGrid = (value: number, min: number, max: number): number => {
-  return Math.max(min, Math.min(max, value));
+const DEFAULT_CONFIG: GameConfig = {
+  serverTickRate: 64,
+  maxPlayers: 32,
+  debugMode: false
 };
 
 /**
- * Calculates interpolation between game ticks
+ * Loads configuration from a JSON file, merging with defaults
  */
-export const lerp = (start: number, end: number, alpha: number): number => {
-  return start + (end - start) * alpha;
-};
-
-/**
- * Safely parses game configuration strings
- */
-export const parseConfigValue = <T>(value: string, fallback: T): T => {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
+export function loadConfig(path: string): GameConfig {
+  if (!existsSync(path)) {
+    return { ...DEFAULT_CONFIG };
   }
-};
 
-/**
- * Formats score for UI rendering
- */
-export const formatScore = (score: number): string => {
-  return score.toString().padStart(6, '0');
-};
-
-/**
- * Random integer generator for spawn locations
- */
-export const getRandomInt = (min: number, max: number): number => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+  try {
+    const data = readFileSync(path, 'utf-8');
+    const parsed = JSON.parse(data) as Partial<GameConfig>;
+    
+    return {
+      ...DEFAULT_CONFIG,
+      ...parsed
+    };
+  } catch (error) {
+    console.error('Failed to parse config, using defaults:', error);
+    return { ...DEFAULT_CONFIG };
+  }
+}
